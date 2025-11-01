@@ -25,7 +25,8 @@
           <div class="item" :class="{ generator: item.isGenerator }">
             <div
               class="emoji-wrapper"
-              :class="{ 'animate-max': maxLevelFlash.has(index) }"
+              :class="{ pop: activeGenerators.has(index) }"
+              @click.stop="item.isGenerator ? onGeneratorClick(index) : onCellTap(index)"
             >
               <div class="emoji">
                 {{
@@ -34,8 +35,9 @@
                     : emojiMap[item.type]?.[item.level - 1] ?? "❓"
                 }}
               </div>
-              <div v-if="maxLevelFlash.has(index)" class="max-overlay">MAX</div>
+
               <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
+              <div v-if="maxLevelFlash.has(index)" class="max-overlay">MAX</div>
             </div>
             <!-- <div class="emoji">
               {{
@@ -116,6 +118,16 @@ const mobileDragX = ref(0);
 const mobileDragY = ref(0);
 const maxLevelFlash = ref<Set<number>>(new Set());
 
+const activeGenerators = ref<Set<number>>(new Set());
+
+function onGeneratorClick(index: number) {
+  generateChild(index); // only generate one item
+
+  // Trigger pop animation
+  activeGenerators.value.add(index);
+  setTimeout(() => activeGenerators.value.delete(index), 300);
+}
+
 function getCellColor(index: number): string {
   const cols = 5;
   const row = Math.floor(index / cols);
@@ -127,7 +139,7 @@ function onCellTap(index: number) {
   const item = items.value[index];
 
   if (item?.isGenerator) {
-    generateChild(index);
+    return;
   } else {
     console.log("cell clicked", index);
     // optionally: select for mobile merge if needed
@@ -482,8 +494,15 @@ onMounted(() => {
 }
 
 .emoji {
-  font-size: 32px;
-  position: relative;
+  font-size: 2rem; /* or whatever your default is */
+  transition: all 0.3s ease;
+  filter: saturate(1.2) contrast(1) brightness(1.1);
+}
+
+/* Pop effect when clicked */
+.emoji.pop {
+  transform: scale(1.3);
+  text-shadow: 2px 2px 0 #ccc, 4px 4px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* small lightning icon for all generators */
@@ -538,5 +557,24 @@ onMounted(() => {
 
 .animate-max {
   animation: pop-shake 0.5s ease-in-out;
+}
+
+.emoji-wrapper.pop .emoji {
+  animation: generator-pop 0.3s ease-out forwards;
+}
+
+@keyframes generator-pop {
+  0% {
+    transform: scale(1);
+    /* filter: drop-shadow(0 0 0 #fff176); */
+  }
+  50% {
+    transform: scale(1.5);
+    /* filter: drop-shadow(0 0 10px #fff176) drop-shadow(0 0 20px #fff176); */
+  }
+  100% {
+    transform: scale(1);
+    /* filter: drop-shadow(0 0 0 #fff176); */
+  }
 }
 </style>
