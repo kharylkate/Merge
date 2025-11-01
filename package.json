@@ -2,6 +2,7 @@
   "name": "merge",
   "version": "0.0.0",
   "private": true,
+  "homepage": "https://<kharylkate>.github.io/Merge",
   "type": "module",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
