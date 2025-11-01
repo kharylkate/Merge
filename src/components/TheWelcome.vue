@@ -89,8 +89,9 @@ const generatorEmojiMap: Record<string, string> = {
 };
 
 const mergeItemTypes = Object.keys(emojiMap);
-const BOARD_SIZE = 25;
 const GRID_WIDTH = 5;
+const GRID_HEIGHT = 7;
+const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 40
 
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
@@ -150,18 +151,26 @@ function populateItems(): void {
     generatorPositions.push(pos);
   });
 
-  // Step 2: fill the remaining spaces with random level 1 items
-  for (let i = 0; i < BOARD_SIZE; i++) {
-    if (!newItems[i]) {
-      const type = mergeItemTypes[randomInt(mergeItemTypes.length)] as string;
-      newItems[i] = {
-        id: Date.now() + i,
+  // Step 2: determine how many extra items to place
+  const maxFilled = Math.floor(BOARD_SIZE * 0.6); // max 60% filled
+  const extraItemsCount = maxFilled - mergeItemTypes.length; // minus generators
+
+  // Step 3: place random level 1 items
+  let placed = 0;
+  while (placed < extraItemsCount) {
+    const pos = randomInt(BOARD_SIZE);
+    if (!newItems[pos]) {
+      const type = mergeItemTypes[randomInt(mergeItemTypes.length)];
+      newItems[pos] = {
+        id: Date.now() + pos + placed,
         type,
         level: 1,
       };
+      placed++;
     }
   }
 
+  // Remaining cells stay null (empty)
   items.value = newItems;
 }
 
@@ -371,9 +380,9 @@ onMounted(() => {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(5, 80px);
-  grid-template-rows: repeat(5, 80px);
-  /* gap: 4px; */
+  grid-template-columns: repeat(5, 80px); /* 5 columns */
+  grid-template-rows: repeat(7, 80px); /* 8 rows */
+  /* gap: 4px; optional spacing between cells */
   background: #e6d8b3;
   border-radius: 5px;
 }
@@ -413,8 +422,8 @@ onMounted(() => {
 }
 
 .cell.generator {
-  border-color: #00bcd4;
-  background-color: #e0f7fa !important;
+  /* border-color: #00bcd4; */
+  /* background-color: #e0f7fa !important; */
   cursor: pointer;
 }
 
