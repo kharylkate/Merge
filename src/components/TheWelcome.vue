@@ -47,15 +47,15 @@
           left: mobileDragX + 'px',
         }"
       >
-        <div class="item">
+        <div class="item" v-if="draggedItem">
           <div class="emoji">
-            {{ getDraggedItem()?.isGenerator ? "⚡" : emojiMap[getDraggedItem().type] }}
+            {{ draggedItem.isGenerator ? "⚡" : emojiMap[draggedItem.type] }}
           </div>
           <div class="label">
             {{
-              getDraggedItem()?.isGenerator
-                ? `PRODUCE ${getDraggedItem().type.toUpperCase()}`
-                : `L${getDraggedItem().level}`
+              draggedItem.isGenerator
+                ? `PRODUCE ${draggedItem.type.toUpperCase()}`
+                : `L${draggedItem.level}`
             }}
           </div>
         </div>
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 
 interface MergeItem {
   id: number;
@@ -346,6 +346,8 @@ function getDraggedItem(): MergeItem | null {
   const item = items.value[mobileDrag.value.startIndex];
   return item ?? null; // convert undefined to null
 }
+
+const draggedItem = computed(() => getDraggedItem());
 
 onMounted(() => {
   isMobile.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
