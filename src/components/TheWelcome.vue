@@ -431,7 +431,6 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(5, 80px); /* 5 columns */
   grid-template-rows: repeat(7, 80px); /* 8 rows */
-  /* gap: 4px; optional spacing between cells */
   background: #e6d8b3;
   border-radius: 5px;
 }
@@ -480,10 +479,10 @@ onMounted(() => {
   position: fixed;
   width: 80px;
   height: 80px;
-  pointer-events: none; /* so it doesn’t block touches */
+  pointer-events: none;
   z-index: 9999;
   opacity: 0.8;
-  transform: translate(-50%, -50%); /* CENTER the div at top/left coordinates */
+  transform: translate(-50%, -50%);
 }
 
 .item {
@@ -494,7 +493,7 @@ onMounted(() => {
 }
 
 .emoji {
-  font-size: 2rem; /* or whatever your default is */
+  font-size: 2rem;
   transition: all 0.3s ease;
   filter: saturate(1.2) contrast(1) brightness(1.1);
 }
@@ -509,7 +508,7 @@ onMounted(() => {
 .generator-overlay {
   position: absolute;
   font-size: 10px; /* smaller than main emoji */
-  bottom: 0; /* bottom right corner */
+  bottom: 0;
   right: 0;
   background: #fff;
   border-radius: 50%;
