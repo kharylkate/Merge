@@ -9,8 +9,8 @@
         :data-index="index"
         :class="[
           'cell',
-          { generator: item?.isGenerator, selected: selectedIndex === index },
           getCellColor(index),
+          { generator: item?.isGenerator, selected: selectedIndex === index },
         ]"
         @click="onCellTap(index)"
         :draggable="!isMobile"
@@ -329,7 +329,7 @@ onMounted(() => {
   grid-template-columns: repeat(5, 80px);
   grid-template-rows: repeat(5, 80px);
   /* gap: 4px; */
-  background: #fafafa;
+  background: #e6d8b3;
   border-radius: 5px;
 }
 
@@ -337,20 +337,14 @@ onMounted(() => {
   width: 80px;
   height: 80px;
   border: 0px;
-  border: 1spx solid #ccc;
-  border-radius: 10px;
+  /* border: 1spx solid #ccc; */
+  /* border-radius: 10px; */
   display: flex;
   align-items: center;
   justify-content: center;
   background: #fafafa;
   cursor: grab;
   user-select: none;
-}
-
-.cell.generator {
-  border-color: #00bcd4;
-  background: #e0f7fa;
-  cursor: pointer;
 }
 
 .item {
@@ -375,15 +369,17 @@ onMounted(() => {
   text-align: center;
 }
 
-.cell.selected {
-  outline: 3px solid #ff9800;
-}
-
 .light-cell {
-  background-color: #c8facc; /* light green */
+  background-color: #e6d8b3;
 }
 
 .dark-cell {
-  background-color: #66bb6a; /* dark green */
+  background-color: #d6c7a1;
+}
+
+.cell.generator {
+  border-color: #00bcd4;
+  background-color: #e0f7fa !important;
+  cursor: pointer;
 }
 </style>
