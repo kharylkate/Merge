@@ -7,14 +7,13 @@
         v-for="(item, index) in items"
         :key="index"
         class="cell"
+        :data-index="index"
         :class="{ generator: item?.isGenerator }"
-        draggable="true"
-        @dragstart="item && onDragStart(index)"
-        @dragover.prevent
-        @drop="onDrop(index)"
-        @click="item?.isGenerator && generateChild(index)"
+        @click="onCellTap(index)"
+        @touchstart.prevent="onTouchStart(index, $event)"
+        @touchmove.prevent="onTouchMove"
+        @touchend.prevent="onTouchEnd"
       >
-        <!-- Generator item -->
         <template v-if="item">
           <div class="item">
             <div class="emoji">
@@ -30,7 +29,6 @@
           </div>
         </template>
 
-        <!-- Empty cell -->
         <div v-else class="empty">•</div>
       </div>
     </div>
@@ -61,6 +59,24 @@ const GRID_WIDTH = 5;
 
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
+const selectedIndex = ref<number | null>(null);
+
+function onCellTap(index: number) {
+  const item = items.value[index];
+
+  if (item?.isGenerator) {
+    generateChild(index);
+  } else {
+    console.log("cell clicked", index);
+    // optionally: select for mobile merge if needed
+    if (selectedIndex.value === null && item) {
+      selectedIndex.value = index;
+    } else if (selectedIndex.value !== null) {
+      onDrop(index);
+      selectedIndex.value = null;
+    }
+  }
+}
 
 // Helper: random integer
 function randomInt(max: number): number {
@@ -192,6 +208,94 @@ function onDrop(targetIndex: number): void {
   draggedIndex.value = null;
 }
 
+function onCellClick(index: number) {
+  const item = items.value[index];
+
+  if (item?.isGenerator) {
+    generateChild(index);
+    return;
+  }
+
+  // Mobile drag selection: tap to select, then tap to drop
+  if (selectedIndex.value === null && item) {
+    selectedIndex.value = index;
+  } else if (selectedIndex.value !== null) {
+    onDrop(index);
+    selectedIndex.value = null;
+  }
+}
+
+let touchStartIndex: number | null = null;
+
+function onTouchStart(index: number, event: TouchEvent) {
+  const touch = event.touches[0];
+  if (!touch) return;
+
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+
+  mobileDrag.value.startIndex = index;
+  mobileDrag.value.currentIndex = index;
+  mobileDrag.value.isDragging = false;
+}
+
+function onTouchMove(event: TouchEvent) {
+  if (mobileDrag.value.startIndex === null) return;
+
+  const touch = event.touches[0];
+  if (!touch) return;
+
+  const dx = Math.abs(touch.clientX - touchStartX);
+  const dy = Math.abs(touch.clientY - touchStartY);
+
+  // Only start dragging if finger moved enough
+  if (dx > tapThreshold || dy > tapThreshold) {
+    mobileDrag.value.isDragging = true;
+  }
+
+  // Track the cell under the finger
+  const el = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
+  if (!el) return;
+
+  const cellEl = el.closest(".cell") as HTMLElement;
+  if (!cellEl) return;
+
+  const indexAttr = cellEl.getAttribute("data-index");
+  if (!indexAttr) return;
+
+  mobileDrag.value.currentIndex = parseInt(indexAttr, 10);
+}
+
+function onTouchEnd() {
+  const { startIndex, currentIndex, isDragging } = mobileDrag.value;
+
+  if (startIndex === null) return;
+
+  if (!isDragging) {
+    // Tap → select / generator
+    onCellTap(startIndex);
+  } else if (currentIndex !== null && startIndex !== currentIndex) {
+    // Drag → drop / merge
+    draggedIndex.value = startIndex;
+    onDrop(currentIndex);
+  }
+
+  // Reset
+  mobileDrag.value.startIndex = null;
+  mobileDrag.value.currentIndex = null;
+  mobileDrag.value.isDragging = false;
+}
+
+const mobileDrag = ref<{
+  startIndex: number | null; // initial touched cell
+  currentIndex: number | null; // cell currently under finger
+  isDragging: boolean;
+}>({ startIndex: null, currentIndex: null, isDragging: false });
+
+const tapThreshold = 10; // pixels to distinguish tap vs drag
+let touchStartX = 0;
+let touchStartY = 0;
+
 onMounted(() => populateItems());
 </script>
 
@@ -242,5 +346,9 @@ onMounted(() => populateItems());
   font-size: 12px;
   color: #555;
   text-align: center;
+}
+
+.cell.selected {
+  outline: 3px solid #ff9800;
 }
 </style>
