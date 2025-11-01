@@ -92,7 +92,7 @@ function populateItems(): void {
   // Step 2: fill the remaining spaces with random level 1 items
   for (let i = 0; i < BOARD_SIZE; i++) {
     if (!newItems[i]) {
-      const type = mergeItemTypes[randomInt(mergeItemTypes.length)];
+      const type = mergeItemTypes[randomInt(mergeItemTypes.length)] as string;
       newItems[i] = {
         id: Date.now() + i,
         type,
