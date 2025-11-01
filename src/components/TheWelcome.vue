@@ -24,14 +24,12 @@
         <template v-if="item">
           <div class="item" :class="{ generator: item.isGenerator }">
             <div class="emoji">
-              {{ emojiMap[item.type] }}
-              <!-- small lightning overlay for all generators -->
-              <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
-            </div>
-            <div class="label">
               {{
-                item.isGenerator ? `PRODUCE ${item.type.toUpperCase()}` : `L${item.level}`
+                item.isGenerator
+                  ? generatorEmojiMap[item.type]
+                  : emojiMap[item.type]?.[item.level - 1] ?? "❓"
               }}
+              <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
             </div>
           </div>
         </template>
@@ -74,12 +72,20 @@ interface MergeItem {
   isGenerator?: boolean;
 }
 
-const emojiMap: Record<string, string> = {
-  wood: "🌲",
-  stone: "🪨",
-  iron: "⚙️",
-  gold: "💰",
-  crystal: "💎",
+const emojiMap: Record<string, string[]> = {
+  wood: ["🌱", "🌿", "🌳", "🎋", "🌲"], // level 1 → 5
+  stone: ["🪵", "🪨", "🗿", "⛰️", "🏔️"],
+  iron: ["🔩", "⚙️", "🛠️", "🪛", "⚒️"],
+  gold: ["🪙", "💰", "🏆", "🥇", "💎"],
+  crystal: ["🔹", "🔷", "💠", "✨", "💎"],
+};
+
+const generatorEmojiMap: Record<string, string> = {
+  wood: "🌳", // generic tree for wood generator
+  stone: "⛰️", // mountain/stone for stone generator
+  iron: "⚙️", // gear for iron generator
+  gold: "💰", // money bag for gold generator
+  crystal: "💎", // gem for crystal generator
 };
 
 const mergeItemTypes = Object.keys(emojiMap);
