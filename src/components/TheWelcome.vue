@@ -6,9 +6,12 @@
       <div
         v-for="(item, index) in items"
         :key="index"
-        class="cell"
         :data-index="index"
-        :class="{ generator: item?.isGenerator, selected: selectedIndex === index }"
+        :class="[
+          'cell',
+          { generator: item?.isGenerator, selected: selectedIndex === index },
+          getCellColor(index),
+        ]"
         @click="onCellTap(index)"
         :draggable="!isMobile"
         @dragstart="!isMobile && item ? onDragStart(index) : null"
@@ -62,6 +65,13 @@ const GRID_WIDTH = 5;
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
 const selectedIndex = ref<number | null>(null);
+
+function getCellColor(index: number): string {
+  const cols = 5;
+  const row = Math.floor(index / cols);
+  const col = index % cols;
+  return (row + col) % 2 === 0 ? "light-cell" : "dark-cell";
+}
 
 function onCellTap(index: number) {
   const item = items.value[index];
@@ -367,5 +377,13 @@ onMounted(() => {
 
 .cell.selected {
   outline: 3px solid #ff9800;
+}
+
+.light-cell {
+  background-color: #c8facc; /* light green */
+}
+
+.dark-cell {
+  background-color: #66bb6a; /* dark green */
 }
 </style>
