@@ -171,21 +171,21 @@ function populateItems(): void {
   const maxFilled = Math.floor(BOARD_SIZE * 0.6); // max 60% filled
   const extraItemsCount = maxFilled - mergeItemTypes.length; // minus generators
 
-  // Step 3: place random items with 80% chance for level 1 or 2, 20% for level 3
+  // Step 3: place random items with weighted levels
   let placed = 0;
   while (placed < extraItemsCount) {
     const pos = randomInt(BOARD_SIZE);
     if (!newItems[pos]) {
       const type = mergeItemTypes[randomInt(mergeItemTypes.length)] as string;
 
-      // Determine level
-      const rand = Math.random(); // 0 → 1
+      // Determine level using 70% → 1, 25% → 2, 5% → 3
+      const rand = Math.random();
       let level: number;
-      if (rand < 0.8) {
-        // 80% chance → level 1 or 2
-        level = Math.random() < 0.5 ? 1 : 2;
+      if (rand < 0.7) {
+        level = 1;
+      } else if (rand < 0.95) {
+        level = 2;
       } else {
-        // 20% chance → level 3
         level = 3;
       }
 
