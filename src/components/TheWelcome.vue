@@ -36,6 +36,28 @@
 
         <div v-else class="empty">•</div>
       </div>
+
+      <div
+        v-if="mobileDrag.isDragging && mobileDrag.startIndex !== null"
+        class="mobile-drag-copy"
+        :style="{
+          top: mobileDragY + 'px',
+          left: mobileDragX + 'px',
+        }"
+      >
+        <div class="item">
+          <div class="emoji">
+            {{ getDraggedItem()?.isGenerator ? "⚡" : emojiMap[getDraggedItem().type] }}
+          </div>
+          <div class="label">
+            {{
+              getDraggedItem()?.isGenerator
+                ? `PRODUCE ${getDraggedItem().type.toUpperCase()}`
+                : `L${getDraggedItem().level}`
+            }}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -65,6 +87,9 @@ const GRID_WIDTH = 5;
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
 const selectedIndex = ref<number | null>(null);
+
+const mobileDragX = ref(0);
+const mobileDragY = ref(0);
 
 function getCellColor(index: number): string {
   const cols = 5;
@@ -260,10 +285,13 @@ function onTouchMove(event: TouchEvent) {
   const dx = Math.abs(touch.clientX - touchStartX);
   const dy = Math.abs(touch.clientY - touchStartY);
 
-  // Only start dragging if finger moved enough
   if (dx > tapThreshold || dy > tapThreshold) {
     mobileDrag.value.isDragging = true;
   }
+
+  // Update the floating copy position
+  mobileDragX.value = touch.clientX;
+  mobileDragY.value = touch.clientY;
 
   // Track the cell under the finger
   const el = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement;
@@ -309,6 +337,13 @@ let touchStartX = 0;
 let touchStartY = 0;
 
 const isMobile = ref(false);
+
+function getDraggedItem(): MergeItem | null {
+  if (mobileDrag.value.startIndex === null) return null;
+
+  const item = items.value[mobileDrag.value.startIndex];
+  return item ?? null; // convert undefined to null
+}
 
 onMounted(() => {
   isMobile.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
@@ -381,5 +416,15 @@ onMounted(() => {
   border-color: #00bcd4;
   background-color: #e0f7fa !important;
   cursor: pointer;
+}
+
+.mobile-drag-copy {
+  position: fixed;
+  width: 80px;
+  height: 80px;
+  pointer-events: none; /* so it doesn’t block touches */
+  z-index: 9999;
+  opacity: 0.8;
+  transform: translate(-50%, -50%); /* CENTER the div at top/left coordinates */
 }
 </style>
