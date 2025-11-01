@@ -25,9 +25,7 @@
             </div>
             <div class="label">
               {{
-                item.isGenerator
-                  ? `GENERATOR: ${item.type.toUpperCase()}`
-                  : `L${item.level}`
+                item.isGenerator ? `PRODUCE ${item.type.toUpperCase()}` : `L${item.level}`
               }}
             </div>
           </div>
@@ -309,17 +307,27 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.merge-game {
+  display: grid;
+  justify-content: center;
+  margin: 12px;
+  padding: 12px;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(5, 80px);
   grid-template-rows: repeat(5, 80px);
-  gap: 8px;
+  /* gap: 4px; */
+  background: #fafafa;
+  border-radius: 5px;
 }
 
 .cell {
   width: 80px;
   height: 80px;
-  border: 2px solid #ccc;
+  border: 0px;
+  border: 1spx solid #ccc;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -352,7 +360,7 @@ onMounted(() => {
 }
 
 .label {
-  font-size: 12px;
+  font-size: 10px;
   color: #555;
   text-align: center;
 }
