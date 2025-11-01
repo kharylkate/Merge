@@ -22,9 +22,11 @@
         @touchend.prevent="isMobile ? onTouchEnd() : null"
       >
         <template v-if="item">
-          <div class="item">
+          <div class="item" :class="{ generator: item.isGenerator }">
             <div class="emoji">
-              {{ item.isGenerator ? "⚡" : emojiMap[item.type] }}
+              {{ emojiMap[item.type] }}
+              <!-- small lightning overlay for all generators -->
+              <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
             </div>
             <div class="label">
               {{
@@ -382,20 +384,10 @@ onMounted(() => {
   user-select: none;
 }
 
-.item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .empty {
   opacity: 0.3;
   font-size: 20px;
   color: #bbb;
-}
-
-.emoji {
-  font-size: 32px;
 }
 
 .label {
@@ -426,5 +418,29 @@ onMounted(() => {
   z-index: 9999;
   opacity: 0.8;
   transform: translate(-50%, -50%); /* CENTER the div at top/left coordinates */
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; /* needed for overlay */
+}
+
+.emoji {
+  font-size: 32px;
+  position: relative;
+}
+
+/* small lightning icon for all generators */
+.generator-overlay {
+  position: absolute;
+  font-size: 10px; /* smaller than main emoji */
+  bottom: 0; /* bottom right corner */
+  right: 0;
+  background: #fff;
+  border-radius: 50%;
+  padding: 1px 2px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 </style>
