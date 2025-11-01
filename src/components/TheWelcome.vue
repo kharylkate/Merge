@@ -7,19 +7,14 @@
         v-for="(item, index) in items"
         :key="index"
         class="cell"
-        :class="{ generator: item?.isGenerator }"
-        draggable="true"
-        @dragstart="item && onDragStart(index)"
-        @dragover.prevent
-        @drop="onDrop(index)"
+        :class="{ generator: item?.isGenerator, dragging: draggedIndex === index }"
+        @pointerdown="startDrag(index)"
+        @pointerup="drop(index)"
         @click="item?.isGenerator && generateChild(index)"
       >
-        <!-- Generator item -->
         <template v-if="item">
           <div class="item">
-            <div class="emoji">
-              {{ item.isGenerator ? "⚡" : emojiMap[item.type] }}
-            </div>
+            <div class="emoji">{{ item.isGenerator ? "⚡" : emojiMap[item.type] }}</div>
             <div class="label">
               {{
                 item.isGenerator
@@ -29,8 +24,6 @@
             </div>
           </div>
         </template>
-
-        <!-- Empty cell -->
         <div v-else class="empty">•</div>
       </div>
     </div>
@@ -54,7 +47,6 @@ const emojiMap: Record<string, string> = {
   gold: "💰",
   crystal: "💎",
 };
-
 const mergeItemTypes = Object.keys(emojiMap);
 const BOARD_SIZE = 25;
 const GRID_WIDTH = 5;
@@ -62,55 +54,35 @@ const GRID_WIDTH = 5;
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
 
-// Helper: random integer
-function randomInt(max: number): number {
+function randomInt(max: number) {
   return Math.floor(Math.random() * max);
 }
 
-// Populate the board with:
-// - 1 generator per item type
-// - Random merge items for the rest
-function populateItems(): void {
+function populateItems() {
   const newItems: (MergeItem | null)[] = Array(BOARD_SIZE).fill(null);
-
-  // Step 1: place one generator per item type
-  const generatorPositions: number[] = [];
   mergeItemTypes.forEach((type) => {
-    let pos: number;
+    let pos;
     do {
       pos = randomInt(BOARD_SIZE);
-    } while (newItems[pos] !== null);
-    newItems[pos] = {
-      id: Date.now() + pos,
-      type,
-      level: 0,
-      isGenerator: true,
-    };
-    generatorPositions.push(pos);
+    } while (newItems[pos]);
+    newItems[pos] = { id: Date.now() + pos, type, level: 0, isGenerator: true };
   });
-
-  // Step 2: fill the remaining spaces with random level 1 items
   for (let i = 0; i < BOARD_SIZE; i++) {
-    if (!newItems[i]) {
-      const type = mergeItemTypes[randomInt(mergeItemTypes.length)] as string;
+    if (!newItems[i])
       newItems[i] = {
         id: Date.now() + i,
-        type,
+        type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
         level: 1,
       };
-    }
   }
-
   items.value = newItems;
 }
 
-// 🔹 Find nearest empty space to a given index
-function findNearestEmptyIndex(fromIndex: number): number | null {
+function findNearestEmptyIndex(fromIndex: number) {
   let nearestIndex: number | null = null;
   let minDistance = Infinity;
-
   items.value.forEach((slot, index) => {
-    if (slot === null) {
+    if (!slot) {
       const dx = (index % GRID_WIDTH) - (fromIndex % GRID_WIDTH);
       const dy = Math.floor(index / GRID_WIDTH) - Math.floor(fromIndex / GRID_WIDTH);
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -120,43 +92,30 @@ function findNearestEmptyIndex(fromIndex: number): number | null {
       }
     }
   });
-
   return nearestIndex;
 }
 
-// When clicking a generator, spawn a new item
-function generateChild(generatorIndex: number): void {
+function generateChild(generatorIndex: number) {
   const generator = items.value[generatorIndex];
-  if (!generator || !generator.isGenerator) return;
-
+  if (!generator?.isGenerator) return;
   const emptyIndex = findNearestEmptyIndex(generatorIndex);
-  if (emptyIndex === null) {
-    console.log("No empty space available!");
-    return;
-  }
-
-  const newItem: MergeItem = {
-    id: Date.now(),
-    type: generator.type,
-    level: 1,
-  };
-
-  items.value[emptyIndex] = newItem;
+  if (emptyIndex === null) return;
+  items.value[emptyIndex] = { id: Date.now(), type: generator.type, level: 1 };
 }
 
-// Drag logic
-function onDragStart(index: number): void {
+function startDrag(index: number) {
+  if (!items.value[index]) return;
   draggedIndex.value = index;
 }
 
-function onDrop(targetIndex: number): void {
+function drop(targetIndex: number) {
   if (draggedIndex.value === null || draggedIndex.value === targetIndex) return;
 
   const draggedItem = items.value[draggedIndex.value];
   const targetItem = items.value[targetIndex];
   if (!draggedItem) return;
 
-  // Case 1: Merge — same type + same level, target is NOT a generator
+  // Merge
   if (
     targetItem &&
     !targetItem.isGenerator &&
@@ -164,27 +123,20 @@ function onDrop(targetIndex: number): void {
     draggedItem.type === targetItem.type &&
     draggedItem.level === targetItem.level
   ) {
-    const mergedItem: MergeItem = {
-      id: Date.now(),
-      type: targetItem.type,
+    items.value[targetIndex] = {
+      ...targetItem,
       level: targetItem.level + 1,
+      id: Date.now(),
     };
-    items.value[targetIndex] = mergedItem;
     items.value[draggedIndex.value] = null;
   }
-  // Case 2: Move to empty
+  // Move to empty
   else if (!targetItem) {
     items.value[targetIndex] = draggedItem;
     items.value[draggedIndex.value] = null;
   }
-  // Case 3: Swap — target exists and is either a different item OR a generator
-  else if (
-    targetItem &&
-    // Allow swap if dragged item is different OR target is a generator
-    (targetItem.isGenerator ||
-      draggedItem.type !== targetItem.type ||
-      draggedItem.level !== targetItem.level)
-  ) {
+  // Swap
+  else {
     items.value[targetIndex] = draggedItem;
     items.value[draggedIndex.value] = targetItem;
   }
@@ -202,7 +154,6 @@ onMounted(() => populateItems());
   grid-template-rows: repeat(5, 80px);
   gap: 8px;
 }
-
 .cell {
   width: 80px;
   height: 80px;
@@ -212,32 +163,28 @@ onMounted(() => populateItems());
   align-items: center;
   justify-content: center;
   background: #fafafa;
-  cursor: grab;
   user-select: none;
 }
-
 .cell.generator {
   border-color: #00bcd4;
   background: #e0f7fa;
-  cursor: pointer;
 }
-
+.cell.dragging {
+  opacity: 0.5;
+}
 .item {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 .empty {
   opacity: 0.3;
   font-size: 20px;
   color: #bbb;
 }
-
 .emoji {
   font-size: 32px;
 }
-
 .label {
   font-size: 12px;
   color: #555;
