@@ -8,11 +8,15 @@
         :key="index"
         class="cell"
         :data-index="index"
-        :class="{ generator: item?.isGenerator }"
+        :class="{ generator: item?.isGenerator, selected: selectedIndex === index }"
         @click="onCellTap(index)"
-        @touchstart.prevent="onTouchStart(index, $event)"
-        @touchmove.prevent="onTouchMove"
-        @touchend.prevent="onTouchEnd"
+        :draggable="!isMobile"
+        @dragstart="!isMobile && item ? onDragStart(index) : null"
+        @dragover.prevent="!isMobile && true"
+        @drop="!isMobile ? onDrop(index) : null"
+        @touchstart.prevent="isMobile ? onTouchStart(index, $event) : null"
+        @touchmove.prevent="isMobile ? onTouchMove($event) : null"
+        @touchend.prevent="isMobile ? onTouchEnd() : null"
       >
         <template v-if="item">
           <div class="item">
@@ -296,7 +300,12 @@ const tapThreshold = 10; // pixels to distinguish tap vs drag
 let touchStartX = 0;
 let touchStartY = 0;
 
-onMounted(() => populateItems());
+const isMobile = ref(false);
+
+onMounted(() => {
+  isMobile.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  populateItems();
+});
 </script>
 
 <style scoped>
