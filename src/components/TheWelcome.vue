@@ -62,12 +62,12 @@ const GRID_WIDTH = 5;
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
 
-// 🪵 Helper: random integer
+// Helper: random integer
 function randomInt(max: number): number {
   return Math.floor(Math.random() * max);
 }
 
-// 🧩 Populate the board with:
+// Populate the board with:
 // - 1 generator per item type
 // - Random merge items for the rest
 function populateItems(): void {
@@ -124,7 +124,7 @@ function findNearestEmptyIndex(fromIndex: number): number | null {
   return nearestIndex;
 }
 
-// ⚡ When clicking a generator, spawn a new item
+// When clicking a generator, spawn a new item
 function generateChild(generatorIndex: number): void {
   const generator = items.value[generatorIndex];
   if (!generator || !generator.isGenerator) return;
@@ -144,7 +144,7 @@ function generateChild(generatorIndex: number): void {
   items.value[emptyIndex] = newItem;
 }
 
-// 🧩 Drag logic
+// Drag logic
 function onDragStart(index: number): void {
   draggedIndex.value = index;
 }
