@@ -23,14 +23,28 @@
       >
         <template v-if="item">
           <div class="item" :class="{ generator: item.isGenerator }">
-            <div class="emoji">
+            <div
+              class="emoji-wrapper"
+              :class="{ 'animate-max': maxLevelFlash.has(index) }"
+            >
+              <div class="emoji">
+                {{
+                  item.isGenerator
+                    ? generatorEmojiMap[item.type]
+                    : emojiMap[item.type]?.[item.level - 1] ?? "❓"
+                }}
+              </div>
+              <div v-if="maxLevelFlash.has(index)" class="max-overlay">MAX</div>
+              <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
+            </div>
+            <!-- <div class="emoji">
               {{
                 item.isGenerator
                   ? generatorEmojiMap[item.type]
                   : emojiMap[item.type]?.[item.level - 1] ?? "❓"
               }}
               <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
-            </div>
+            </div> -->
           </div>
         </template>
 
@@ -92,6 +106,7 @@ const mergeItemTypes = Object.keys(emojiMap);
 const GRID_WIDTH = 5;
 const GRID_HEIGHT = 7;
 const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 40
+const MAX_LEVEL = 5;
 
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
@@ -99,6 +114,7 @@ const selectedIndex = ref<number | null>(null);
 
 const mobileDragX = ref(0);
 const mobileDragY = ref(0);
+const maxLevelFlash = ref<Set<number>>(new Set());
 
 function getCellColor(index: number): string {
   const cols = 5;
@@ -155,16 +171,28 @@ function populateItems(): void {
   const maxFilled = Math.floor(BOARD_SIZE * 0.6); // max 60% filled
   const extraItemsCount = maxFilled - mergeItemTypes.length; // minus generators
 
-  // Step 3: place random level 1 items
+  // Step 3: place random items with 80% chance for level 1 or 2, 20% for level 3
   let placed = 0;
   while (placed < extraItemsCount) {
     const pos = randomInt(BOARD_SIZE);
     if (!newItems[pos]) {
-      const type = mergeItemTypes[randomInt(mergeItemTypes.length)];
+      const type = mergeItemTypes[randomInt(mergeItemTypes.length)] as string;
+
+      // Determine level
+      const rand = Math.random(); // 0 → 1
+      let level: number;
+      if (rand < 0.8) {
+        // 80% chance → level 1 or 2
+        level = Math.random() < 0.5 ? 1 : 2;
+      } else {
+        // 20% chance → level 3
+        level = 3;
+      }
+
       newItems[pos] = {
         id: Date.now() + pos + placed,
         type,
-        level: 1,
+        level,
       };
       placed++;
     }
@@ -234,13 +262,22 @@ function onDrop(targetIndex: number): void {
     draggedItem.type === targetItem.type &&
     draggedItem.level === targetItem.level
   ) {
-    const mergedItem: MergeItem = {
-      id: Date.now(),
-      type: targetItem.type,
-      level: targetItem.level + 1,
-    };
-    items.value[targetIndex] = mergedItem;
-    items.value[draggedIndex.value] = null;
+    if (targetItem.level >= MAX_LEVEL) {
+      // Already max level → flash MAX indicator
+      maxLevelFlash.value.add(targetIndex);
+      setTimeout(() => {
+        maxLevelFlash.value.delete(targetIndex);
+      }, 1000); // show for 1 second
+    } else {
+      // Normal merge
+      const mergedItem: MergeItem = {
+        id: Date.now(),
+        type: targetItem.type,
+        level: targetItem.level + 1,
+      };
+      items.value[targetIndex] = mergedItem;
+      items.value[draggedIndex.value] = null;
+    }
   }
   // Case 2: Move to empty
   else if (!targetItem) {
@@ -459,5 +496,47 @@ onMounted(() => {
   border-radius: 50%;
   padding: 1px 2px;
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.emoji-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.max-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes pop-shake {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.2) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(10deg);
+  }
+  75% {
+    transform: scale(1.2) rotate(-5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.animate-max {
+  animation: pop-shake 0.5s ease-in-out;
 }
 </style>
