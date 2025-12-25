@@ -220,7 +220,9 @@ function getCellColor(index: number): string {
 
 function onCellTap(index: number) {
   const item = items.value[index];
-  selectedCell.value.item = item;
+
+  if (!item) return;
+  selectedCell.value.item = { ...item };
   selectedCell.value.index = index;
 
   if (item?.isGenerator) {
