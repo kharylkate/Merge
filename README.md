@@ -1,5 +1,9 @@
 # Merge
 
+Merge the same item and see it level up!
+
+<img src="./src/assets/merge-0001.png" />
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup
