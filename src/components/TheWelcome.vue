@@ -47,11 +47,11 @@
               :class="{ pop: activeGenerators.has(index) }"
               @click.stop="item.isGenerator ? onGeneratorClick(index) : onCellTap(index)"
             >
-              <template v-if="getItemIcon(item).startsWith('http')">
-                <img class="type-image" :src="getItemIcon(item)" alt="item" />
+              <template v-if="item.isGenerator">
+                <div class="emoji">{{ getItemIcon(item) }}</div>
               </template>
               <template v-else>
-                <div class="emoji">{{ getItemIcon(item) }}</div>
+                <img class="type-image" :src="getItemIcon(item)" alt="item" />
               </template>
 
               <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
@@ -176,27 +176,25 @@ const mobileDragY = ref(0);
 const maxLevelFlash = ref<Set<number>>(new Set());
 
 const activeGenerators = ref<Set<number>>(new Set());
+const iconFiles = import.meta.glob("../assets/icons/*.png", { eager: true, as: "url" });
 
 function getItemIcon(item: MergeItem): string {
-  // Generators → use emoji instead of image
   if (item.isGenerator) {
-    // If we have a matching emoji, return it directly
     const emoji = generatorEmojiMap[item.type];
     if (emoji) return emoji;
-
-    // Fallback: default emoji
     return "⚙️";
   }
 
-  // Regular items → use image icons
   const iconList = itemIconsMap[item.type];
   if (!iconList || iconList.length === 0) {
     console.warn(`⚠️ Missing icons for type: ${item.type}`);
-    return new URL(`../assets/icons/placeholder.png`, import.meta.url).href;
+    return iconFiles["../assets/icons/placeholder.png"] ?? "";
   }
 
   const levelIndex = Math.min(item.level - 1, iconList.length - 1);
-  return new URL(`../assets/icons/${iconList[levelIndex]}.png`, import.meta.url).href;
+  const filePath = `../assets/icons/${iconList[levelIndex]}.png`;
+
+  return iconFiles[filePath] ?? iconFiles["../assets/icons/placeholder.png"] ?? "";
 }
 
 function onGeneratorClick(index: number) {
