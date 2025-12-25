@@ -1,7 +1,26 @@
 <template>
   <div class="merge-game">
     <h2>⚙️ Merge Game — Item Generators</h2>
-
+    <Button label="Click Me" icon="pi pi-check" @click="reload" />
+    <div>
+      <h2>Energy: {{ energy }}⚡</h2>
+      <h4 v-if="energy < 10">({{ formattedTotalCountdown }})</h4>
+    </div>
+    <div class="tasks-container">
+      <ul class="task-unordered-list">
+        <li v-for="(pair, index) in itemsToSubmit" class="task-list-item">
+          <Button
+            class="task-button"
+            @click="submitItem(index)"
+            :disabled="!isSubmitDisabled(pair, index)"
+          >
+            {{ isSubmitDisabled(pair, index) }}
+            <img alt="pair_1" :src="getItemIcon(pair[0])" />
+            <img alt="pair_2" :src="getItemIcon(pair[1])" />
+          </Button>
+        </li>
+      </ul>
+    </div>
     <div class="board">
       <div
         v-for="(item, index) in items"
@@ -28,25 +47,16 @@
               :class="{ pop: activeGenerators.has(index) }"
               @click.stop="item.isGenerator ? onGeneratorClick(index) : onCellTap(index)"
             >
-              <div class="emoji">
-                {{
-                  item.isGenerator
-                    ? generatorEmojiMap[item.type]
-                    : emojiMap[item.type]?.[item.level - 1] ?? "❓"
-                }}
-              </div>
+              <template v-if="getItemIcon(item).startsWith('http')">
+                <img class="type-image" :src="getItemIcon(item)" alt="item" />
+              </template>
+              <template v-else>
+                <div class="emoji">{{ getItemIcon(item) }}</div>
+              </template>
 
               <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
               <div v-if="maxLevelFlash.has(index)" class="max-overlay">MAX</div>
             </div>
-            <!-- <div class="emoji">
-              {{
-                item.isGenerator
-                  ? generatorEmojiMap[item.type]
-                  : emojiMap[item.type]?.[item.level - 1] ?? "❓"
-              }}
-              <span v-if="item.isGenerator" class="generator-overlay">⚡</span>
-            </div> -->
           </div>
         </template>
 
@@ -63,7 +73,7 @@
       >
         <div class="item" v-if="draggedItem">
           <div class="emoji">
-            {{ draggedItem.isGenerator ? "⚡" : emojiMap[draggedItem.type] }}
+            {{ draggedItem.isGenerator ? "⚡" : itemIconsMap[draggedItem.type] }}
           </div>
           <div class="label">
             {{
@@ -79,7 +89,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
+import type { Ref } from "vue";
+import Button from "primevue/button";
 
 interface MergeItem {
   id: number;
@@ -88,23 +100,64 @@ interface MergeItem {
   isGenerator?: boolean;
 }
 
-const emojiMap: Record<string, string[]> = {
-  wood: ["🌱", "🌿", "🌳", "🎋", "🌲"], // level 1 → 5
-  stone: ["🪵", "🪨", "🗿", "⛰️", "🏔️"],
-  iron: ["🔩", "⚙️", "🛠️", "🪛", "⚒️"],
-  gold: ["🪙", "💰", "🏆", "🥇", "💎"],
-  crystal: ["🔹", "🔷", "💠", "✨", "💎"],
-};
-
 const generatorEmojiMap: Record<string, string> = {
-  wood: "🌳", // generic tree for wood generator
-  stone: "⛰️", // mountain/stone for stone generator
-  iron: "⚙️", // gear for iron generator
-  gold: "💰", // money bag for gold generator
-  crystal: "💎", // gem for crystal generator
+  animal: "🌲",
+  drink: "🍹",
+  clothes: "👕",
+  food: "🍔",
 };
 
-const mergeItemTypes = Object.keys(emojiMap);
+const itemIconsMap: Record<string, string[]> = {
+  animal: [
+    "animal_1",
+    "animal_2",
+    "animal_3",
+    "animal_4",
+    "animal_5",
+    "animal_6",
+    "animal_7",
+  ],
+  drinks: [
+    "drinks_1",
+    "drinks_2",
+    "drinks_3",
+    "drinks_4",
+    "drinks_5",
+    "drinks_6",
+    "drinks_7",
+    "drinks_8",
+    "drinks_9",
+  ],
+  clothes: [
+    "clothes_1",
+    "clothes_2",
+    "clothes_3",
+    "clothes_4",
+    "clothes_5",
+    "clothes_6",
+    "clothes_7",
+  ],
+  food: ["food_1", "food_2", "food_3", "food_4", "food_5"],
+  tools: [
+    "tools_1",
+    "tools_2",
+    "tools_3",
+    "tools_4",
+    "tools_5",
+    "tools_6",
+    "tools_7",
+    "tools_8",
+  ],
+  // shape: ["shape_1", "shape_2", "shape_3", "shape_4", "shape_5", "shape_6"],
+};
+
+const energy = ref(10);
+const countdown = ref(0); // time to next energy tick
+const totalCountdown = ref(0); // FULL regen time countdown
+
+let interval: number | undefined;
+
+const mergeItemTypes = Object.keys(itemIconsMap);
 const GRID_WIDTH = 5;
 const GRID_HEIGHT = 7;
 const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 40
@@ -113,6 +166,10 @@ const MAX_LEVEL = 5;
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
 const draggedIndex = ref<number | null>(null);
 const selectedIndex = ref<number | null>(null);
+const selectedCell = ref({
+  item: null as MergeItem | null,
+  index: null as number | null,
+});
 
 const mobileDragX = ref(0);
 const mobileDragY = ref(0);
@@ -120,7 +177,33 @@ const maxLevelFlash = ref<Set<number>>(new Set());
 
 const activeGenerators = ref<Set<number>>(new Set());
 
+function getItemIcon(item: MergeItem): string {
+  // Generators → use emoji instead of image
+  if (item.isGenerator) {
+    // If we have a matching emoji, return it directly
+    const emoji = generatorEmojiMap[item.type];
+    if (emoji) return emoji;
+
+    // Fallback: default emoji
+    return "⚙️";
+  }
+
+  // Regular items → use image icons
+  const iconList = itemIconsMap[item.type];
+  if (!iconList || iconList.length === 0) {
+    console.warn(`⚠️ Missing icons for type: ${item.type}`);
+    return new URL(`../assets/icons/placeholder.png`, import.meta.url).href;
+  }
+
+  const levelIndex = Math.min(item.level - 1, iconList.length - 1);
+  return new URL(`../assets/icons/${iconList[levelIndex]}.png`, import.meta.url).href;
+}
+
 function onGeneratorClick(index: number) {
+  if (!energy.value) return;
+  energy.value--;
+  console.log("energy:", energy.value);
+
   generateChild(index); // only generate one item
 
   // Trigger pop animation
@@ -137,6 +220,8 @@ function getCellColor(index: number): string {
 
 function onCellTap(index: number) {
   const item = items.value[index];
+  selectedCell.value.item = item;
+  selectedCell.value.index = index;
 
   if (item?.isGenerator) {
     return;
@@ -413,9 +498,152 @@ function getDraggedItem(): MergeItem | null {
 
 const draggedItem = computed(() => getDraggedItem());
 
+const formattedTotalCountdown = computed(() => {
+  const minutes = Math.floor(totalCountdown.value / 60);
+  const seconds = totalCountdown.value % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+});
+
+const startEnergyRegen = () => {
+  if (interval !== undefined) clearInterval(interval);
+
+  const missing = 10 - energy.value;
+  if (missing <= 0) return;
+
+  // FULL time remaining (10 sec per energy)
+  totalCountdown.value = missing * 10;
+
+  countdown.value = 10; // next energy tick
+
+  interval = (setInterval(() => {
+    // Decrease total time
+    totalCountdown.value--;
+
+    // Decrease next-energy timer
+    countdown.value--;
+
+    // When countdown hits 0 → gain energy
+    if (countdown.value === 0) {
+      energy.value++;
+
+      if (energy.value >= 10) {
+        // Finished
+        clearInterval(interval);
+        interval = undefined;
+        return;
+      }
+
+      countdown.value = 10; // reset for next energy
+    }
+  }, 1000) as unknown) as number;
+};
+
+const itemsToSubmit: Ref<[MergeItem, MergeItem][]> = ref([]);
+
+function submitItem(index: number) {
+  if (!indexToSubmitFound.value) return;
+
+  indexToSubmitFound.value.forEach((item) => {
+    if (item.listIndex === index) {
+      items.value[item.itemIndexes[0]] = null;
+      items.value[item.itemIndexes[1]] = null;
+
+      itemsToSubmit.value?.splice(index, 1);
+    }
+  });
+}
+
+function createRandomItemPairs(): [MergeItem, MergeItem][] {
+  const PAIR_COUNT = 3;
+  const MAX_LEVEL = 3;
+
+  return Array.from({ length: PAIR_COUNT }, (_, pairIndex) => {
+    const createRandomItem = (offset: number): MergeItem => ({
+      id: Date.now() + pairIndex * 10 + offset,
+      type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
+      level: randomInt(MAX_LEVEL) + 1, // 1–3 only
+    });
+
+    return [createRandomItem(0), createRandomItem(1)];
+  });
+}
+
+function reload() {
+  window.location.reload();
+}
+
+const indexToSubmitFound = ref<
+  [
+    {
+      listIndex: number;
+      itemIndexes: [number, number];
+    }
+  ]
+>([] as any);
+
+function findPairIndexes(
+  pair: [MergeItem, MergeItem],
+  index: number
+): [number, number] | null {
+  const indexes: number[] = [];
+
+  for (let i = 0; i < items.value.length; i++) {
+    const item = items.value[i];
+    if (!item || item.isGenerator) continue;
+
+    const matchesPair0 = item.type === pair[0].type && item.level === pair[0].level;
+    const matchesPair1 = item.type === pair[1].type && item.level === pair[1].level;
+
+    if (matchesPair0 || matchesPair1) {
+      // Prevent using the same index twice if pair[0] === pair[1]
+      if (!indexes.includes(i)) indexes.push(i);
+    }
+
+    if (indexes.length === 2) break;
+  }
+  indexToSubmitFound.value.push({
+    listIndex: index,
+    itemIndexes: [indexes[0]!, indexes[1]!],
+  });
+  return indexes.length === 2 ? [indexes[0]!, indexes[1]!] : null;
+}
+
+function isSubmitDisabled(pair: [MergeItem, MergeItem], index: number) {
+  return findPairIndexes(pair, index);
+}
+
+watch(energy, (newVal) => {
+  if (newVal <= 10) {
+    startEnergyRegen();
+  }
+});
+
+watch(
+  itemsToSubmit,
+  (newPairs) => {
+    if (!newPairs) return;
+    const PAIR_COUNT = 3;
+    const MAX_LEVEL = 3;
+
+    while (itemsToSubmit.value.length < PAIR_COUNT) {
+      const pairIndex = itemsToSubmit.value.length;
+
+      const createRandomItem = (offset: number): MergeItem => ({
+        id: Date.now() + pairIndex * 10 + offset,
+        type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
+        level: randomInt(MAX_LEVEL) + 1, // 1–3
+      });
+
+      itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
+    }
+  },
+  { deep: true, immediate: true }
+);
+
 onMounted(() => {
   isMobile.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
   populateItems();
+  itemsToSubmit.value = createRandomItemPairs();
 });
 </script>
 
@@ -574,6 +802,34 @@ onMounted(() => {
   100% {
     transform: scale(1);
     /* filter: drop-shadow(0 0 0 #fff176); */
+  }
+}
+
+.tasks-container {
+  margin-block: 10px;
+  /* width: 1000px; */
+  max-width: 400px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 80px;
+
+  .task-unordered-list {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .task-list-item {
+    float: left;
+    flex: 0 0 auto;
+  }
+
+  .task-button {
+    margin-right: 10px;
   }
 }
 </style>

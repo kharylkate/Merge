@@ -4,11 +4,11 @@ import TheWelcome from "./components/TheWelcome.vue";
 </script>
 
 <template>
-  <header>
+  <!-- <header>
     <div class="wrapper">
       <HelloWorld msg="Welcome to Merge!" />
     </div>
-  </header>
+  </header> -->
 
   <main>
     <TheWelcome />
