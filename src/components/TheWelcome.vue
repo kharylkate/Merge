@@ -85,13 +85,44 @@
         </div>
       </div>
     </div>
+
+    <div class="item-info">
+      <div class="item-info-container">
+        <div class="item-info-description" v-if="!isCellSelected">
+          Tap an item to learn more
+        </div>
+        <div class="item-info-details" v-else>
+          <div class="item-type-level">
+            {{ isCellSelected.type.toUpperCase() }} -
+            {{
+              isCellSelected.isGenerator ? "Generator" : "Level " + isCellSelected.level
+            }}
+            <Badge
+              class="item-info-badge"
+              value="!"
+              @click="() => (isItemModalOpen = true)"
+            ></Badge>
+          </div>
+          <span class="item-merge-instruction"> Merge 2 same items to level up </span>
+        </div>
+      </div>
+    </div>
+
+    <Dialog
+      v-model:visible="isItemModalOpen"
+      modal
+      :header="isCellSelected?.type + ' Info'"
+      :style="{ width: '25rem' }"
+    >
+      <!-- TODO -->
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import type { Ref } from "vue";
-import Button from "primevue/button";
+import { Badge, Button, Dialog, InputText } from "primevue";
 
 interface MergeItem {
   id: number;
@@ -102,9 +133,10 @@ interface MergeItem {
 
 const generatorEmojiMap: Record<string, string> = {
   animal: "🌲",
-  drink: "🍹",
+  drinks: "🍹",
   clothes: "👕",
   food: "🍔",
+  tools: "⚒️",
 };
 
 const itemIconsMap: Record<string, string[]> = {
@@ -160,7 +192,7 @@ let interval: number | undefined;
 const mergeItemTypes = Object.keys(itemIconsMap);
 const GRID_WIDTH = 7;
 const GRID_HEIGHT = 9;
-const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 63
+const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 49
 const MAX_LEVEL = 5;
 
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
@@ -177,6 +209,8 @@ const maxLevelFlash = ref<Set<number>>(new Set());
 
 const activeGenerators = ref<Set<number>>(new Set());
 const iconFiles = import.meta.glob("../assets/icons/*.png", { eager: true, as: "url" });
+const isCellSelected = ref<MergeItem | null>(null);
+const isItemModalOpen = ref(false);
 
 function getItemIcon(item: MergeItem): string {
   if (item.isGenerator) {
@@ -227,6 +261,7 @@ function onCellTap(index: number) {
     return;
   } else {
     console.log("cell clicked", index);
+    isCellSelected.value = item;
     // optionally: select for mobile merge if needed
     if (selectedIndex.value === null && item) {
       selectedIndex.value = index;
@@ -671,6 +706,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.item-info {
+  margin-block: 20px;
+  padding-block: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .item-info-details {
+    display: grid;
+    align-items: center;
+    justify-content: center;
+    background-color: #ccc;
+    padding: 15px;
+    border-radius: 10px;
+    width: 400px;
+
+    .item-type-level {
+      font-size: 20px;
+      color: black;
+
+      .item-info-badge {
+        position: relative;
+        top: -4px;
+        cursor: pointer;
+      }
+    }
+
+    .item-merge-instruction {
+      color: black;
+    }
+  }
+}
 .merge-game {
   display: grid;
   justify-content: center;
@@ -680,8 +747,8 @@ onMounted(() => {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(7, 80px); /* 5 columns */
-  grid-template-rows: repeat(9, 80px); /* 8 rows */
+  grid-template-columns: repeat(7, 70px); /* 7 columns */
+  grid-template-rows: repeat(9, 70px); /* 7 rows */
   background: #e6d8b3;
   border-radius: 5px;
 }
