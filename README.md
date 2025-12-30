@@ -2,7 +2,7 @@
 
 Merge the same item and see it level up!
 
-<img src="./src/assets/merge-0002.png" />
+<img src="./src/assets/merge-0003.png" />
 
 This template should help get you started developing with Vue 3 in Vite.
 
