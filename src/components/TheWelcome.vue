@@ -1,6 +1,6 @@
 <template>
   <div class="merge-game">
-    <h2>⚙️ Merge Game — Item Generators</h2>
+    <h2>⚙️ Merge Game</h2>
     <Button label="Click Me" icon="pi pi-check" @click="reload" />
     <div>
       <h2>Energy: {{ energy }}⚡</h2>
@@ -158,9 +158,9 @@ const totalCountdown = ref(0); // FULL regen time countdown
 let interval: number | undefined;
 
 const mergeItemTypes = Object.keys(itemIconsMap);
-const GRID_WIDTH = 5;
-const GRID_HEIGHT = 7;
-const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 40
+const GRID_WIDTH = 7;
+const GRID_HEIGHT = 9;
+const BOARD_SIZE = GRID_WIDTH * GRID_HEIGHT; // 63
 const MAX_LEVEL = 5;
 
 const items = ref<(MergeItem | null)[]>(Array(BOARD_SIZE).fill(null));
@@ -555,7 +555,7 @@ function submitItem(index: number) {
 
 function createRandomItemPairs(): [MergeItem, MergeItem][] {
   const PAIR_COUNT = 3;
-  const MAX_LEVEL = 3;
+  const MAX_LEVEL = 5;
 
   return Array.from({ length: PAIR_COUNT }, (_, pairIndex) => {
     const createRandomItem = (offset: number): MergeItem => ({
@@ -587,24 +587,47 @@ function findPairIndexes(
 ): [number, number] | null {
   const indexes: number[] = [];
 
+  let matchesPair0 = false;
+  let matchesPair1 = false;
   for (let i = 0; i < items.value.length; i++) {
     const item = items.value[i];
-    if (!item || item.isGenerator) continue;
 
-    const matchesPair0 = item.type === pair[0].type && item.level === pair[0].level;
-    const matchesPair1 = item.type === pair[1].type && item.level === pair[1].level;
+    if (item && !item.isGenerator) {
+      matchesPair0 = item.type === pair[0].type && item.level === pair[0].level;
 
-    if (matchesPair0 || matchesPair1) {
-      // Prevent using the same index twice if pair[0] === pair[1]
-      if (!indexes.includes(i)) indexes.push(i);
+      if (matchesPair0) {
+        indexes.push(i);
+        break;
+      }
     }
-
-    if (indexes.length === 2) break;
   }
+
+  if (matchesPair0) {
+    for (let i = 0; i < items.value.length; i++) {
+      const item = items.value[i];
+
+      if (item && !item.isGenerator) {
+        const matchesPair1 = item.type === pair[1].type && item.level === pair[1].level;
+
+        if (matchesPair1) {
+          indexes.push(i);
+          break;
+        }
+      }
+    }
+  }
+
+  if (matchesPair0 && matchesPair1) {
+    console.log({ matchesPair0, matchesPair1, indexes });
+  }
+
+  if (!matchesPair0 && !matchesPair1) return null;
+
   indexToSubmitFound.value.push({
     listIndex: index,
     itemIndexes: [indexes[0]!, indexes[1]!],
   });
+
   return indexes.length === 2 ? [indexes[0]!, indexes[1]!] : null;
 }
 
@@ -657,8 +680,8 @@ onMounted(() => {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(5, 80px); /* 5 columns */
-  grid-template-rows: repeat(7, 80px); /* 8 rows */
+  grid-template-columns: repeat(7, 80px); /* 5 columns */
+  grid-template-rows: repeat(9, 80px); /* 8 rows */
   background: #e6d8b3;
   border-radius: 5px;
 }
@@ -808,7 +831,7 @@ onMounted(() => {
 .tasks-container {
   margin-block: 10px;
   /* width: 1000px; */
-  max-width: 400px;
+  max-width: 560px;
   overflow-x: auto;
   overflow-y: hidden;
   height: 80px;
