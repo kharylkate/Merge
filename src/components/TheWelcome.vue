@@ -14,7 +14,7 @@
             @click="submitItem(index)"
             :disabled="!isSubmitDisabled(pair, index)"
           >
-            {{ isSubmitDisabled(pair, index) }}
+            <!-- {{ isSubmitDisabled(pair, index) }} -->
             <img alt="pair_1" :src="getItemIcon(pair[0])" />
             <img alt="pair_2" :src="getItemIcon(pair[1])" />
           </Button>
@@ -611,22 +611,20 @@ function findPairIndexes(
 
         if (matchesPair1) {
           indexes.push(i);
+
+          if (indexes.length < 3) {
+            indexToSubmitFound.value.push({
+              listIndex: index,
+              itemIndexes: [indexes[0]!, indexes[1]!],
+            });
+          }
           break;
         }
       }
     }
   }
 
-  if (matchesPair0 && matchesPair1) {
-    console.log({ matchesPair0, matchesPair1, indexes });
-  }
-
   if (!matchesPair0 && !matchesPair1) return null;
-
-  indexToSubmitFound.value.push({
-    listIndex: index,
-    itemIndexes: [indexes[0]!, indexes[1]!],
-  });
 
   return indexes.length === 2 ? [indexes[0]!, indexes[1]!] : null;
 }
@@ -645,19 +643,20 @@ watch(
   itemsToSubmit,
   (newPairs) => {
     if (!newPairs) return;
+    if (newPairs.length === 3) return;
     const PAIR_COUNT = 3;
     const MAX_LEVEL = 3;
 
     while (itemsToSubmit.value.length < PAIR_COUNT) {
       const pairIndex = itemsToSubmit.value.length;
 
-      const createRandomItem = (offset: number): MergeItem => ({
-        id: Date.now() + pairIndex * 10 + offset,
-        type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
-        level: randomInt(MAX_LEVEL) + 1, // 1–3
-      });
-
-      itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
+      // const createRandomItem = (offset: number): MergeItem => ({
+      //   id: Date.now() + pairIndex * 10 + offset,
+      //   type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
+      //   level: randomInt(MAX_LEVEL) + 1, // 1–3
+      // });
+      break;
+      // itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
     }
   },
   { deep: true, immediate: true }
