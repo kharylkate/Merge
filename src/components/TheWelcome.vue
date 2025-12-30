@@ -609,7 +609,7 @@ function findPairIndexes(
       if (item && !item.isGenerator) {
         const matchesPair1 = item.type === pair[1].type && item.level === pair[1].level;
 
-        if (matchesPair1) {
+        if (matchesPair1 && indexes[0] !== i) {
           indexes.push(i);
 
           if (indexes.length < 3) {
@@ -647,17 +647,18 @@ watch(
     const PAIR_COUNT = 3;
     const MAX_LEVEL = 3;
 
-    while (itemsToSubmit.value.length < PAIR_COUNT) {
-      const pairIndex = itemsToSubmit.value.length;
+    // while (itemsToSubmit.value.length < PAIR_COUNT) {
+    //   const pairIndex = itemsToSubmit.value.length;
 
-      // const createRandomItem = (offset: number): MergeItem => ({
-      //   id: Date.now() + pairIndex * 10 + offset,
-      //   type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
-      //   level: randomInt(MAX_LEVEL) + 1, // 1–3
-      // });
-      break;
-      // itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
-    }
+    //   const createRandomItem = (offset: number): MergeItem => ({
+    //     id: Date.now() + pairIndex * 10 + offset,
+    //     type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
+    //     level: randomInt(MAX_LEVEL) + 1, // 1–3
+    //   });
+    //   break;
+
+    //   itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
+    // }
   },
   { deep: true, immediate: true }
 );
