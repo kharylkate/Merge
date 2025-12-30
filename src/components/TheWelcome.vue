@@ -647,18 +647,18 @@ watch(
     const PAIR_COUNT = 3;
     const MAX_LEVEL = 3;
 
-    // while (itemsToSubmit.value.length < PAIR_COUNT) {
-    //   const pairIndex = itemsToSubmit.value.length;
+    while (itemsToSubmit.value.length < PAIR_COUNT) {
+      const pairIndex = itemsToSubmit.value.length;
 
-    //   const createRandomItem = (offset: number): MergeItem => ({
-    //     id: Date.now() + pairIndex * 10 + offset,
-    //     type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
-    //     level: randomInt(MAX_LEVEL) + 1, // 1–3
-    //   });
-    //   break;
+      const createRandomItem = (offset: number): MergeItem => ({
+        id: Date.now() + pairIndex * 10 + offset,
+        type: mergeItemTypes[randomInt(mergeItemTypes.length)] as string,
+        level: randomInt(MAX_LEVEL) + 1, // 1–3
+      });
+      break;
 
-    //   itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
-    // }
+      itemsToSubmit.value.push([createRandomItem(0), createRandomItem(1)]);
+    }
   },
   { deep: true, immediate: true }
 );
