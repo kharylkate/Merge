@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import type { Ref } from "vue";
-import { Badge, Button, Dialog, InputText } from "primevue";
+import { Badge, Button, Dialog } from "primevue";
 
 interface MergeItem {
   id: number;
@@ -747,15 +747,15 @@ onMounted(() => {
 
 .board {
   display: grid;
-  grid-template-columns: repeat(7, 70px); /* 7 columns */
-  grid-template-rows: repeat(9, 70px); /* 7 rows */
+  grid-template-columns: repeat(7, 75px); /* 7 columns */
+  grid-template-rows: repeat(9, 75px); /* 9 rows */
   background: #e6d8b3;
   border-radius: 5px;
 }
 
 .cell {
-  width: 80px;
-  height: 80px;
+  width: 75px;
+  height: 75px;
   border: 0px;
   /* border: 1spx solid #ccc; */
   /* border-radius: 10px; */
