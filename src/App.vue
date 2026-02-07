@@ -1,17 +1,23 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import HelloWorld from "./components/HelloWorld.vue";
 import TheWelcome from "./components/TheWelcome.vue";
+import { Button } from "primevue";
+
+const screen = ref("null");
 </script>
 
 <template>
-  <!-- <header>
+  <header>
     <div class="wrapper">
-      <HelloWorld msg="Welcome to Merge!" />
+      <Button class="button" @click="screen = 'Merge'" label="Head to Merge" />
+      <Button class="button" @click="screen = 'Tilt'" label="Head to Tilt" />
     </div>
-  </header> -->
+  </header>
 
   <main>
-    <TheWelcome />
+    <TheWelcome v-if="screen === 'Merge'" />
+    <HelloWorld v-if="screen === 'Tilt'" />
   </main>
 </template>
 
@@ -40,6 +46,11 @@ header {
     display: flex;
     place-items: flex-start;
     flex-wrap: wrap;
+
+    .button {
+      padding: 10px;
+      margin: 10px;
+    }
   }
 }
 </style>
